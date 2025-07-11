@@ -1,8 +1,9 @@
 ## 🗂️ Estrutura do Projeto — Matéria de PSI
 
-📁 armazenar_projeto/                     ← Pasta principal do projeto  
+📁 armazenar_projeto/              ← Pasta principal do projeto  
 ├── 📄 app.py                      ← Arquivo principal da aplicação Flask  
-│
+├── 📁 venv/                       ← Ambiente virtual Python
+|
 ├── 📁 templates/                  ← Páginas HTML da aplicação  
 │   ├── 📄 login.html              ← Página de login  
 │   ├── 📄 cadastrar_pessoa.html   ← Página de cadastro de pessoa  
@@ -12,4 +13,5 @@
 ├── 📁 static/                     ← Arquivos estáticos (CSS, imagens, etc.)  
 │   └── 📄 style.css               ← Estilo da aplicação  
 │
-└── 📄 README.md                   
+└── 📄 README.md                   ← Arquivo de instruções/documentação do projeto
+├── 📄 requirements.txt            ← Lista de dependências da aplicação
