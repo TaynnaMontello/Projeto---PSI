@@ -2,7 +2,7 @@
 
 📁 armazenar_projeto/              ← Pasta principal do projeto  
 ├── 📄 app.py                      ← Arquivo principal da aplicação Flask  
-├── 📁 venv/                       ← Ambiente virtual Python
+├── 📁 venv/                       ← Ambiente virtual 
 |
 ├── 📁 templates/                  ← Páginas HTML da aplicação  
 │   ├── 📄 login.html              ← Página de login  
