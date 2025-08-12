@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
-from database import get_db_connection  # Função que retorna conexão com o banco
+from database import get_db_connection
 
 app = Flask(__name__)
 app.secret_key = "supersecreto123"
@@ -10,6 +10,7 @@ app.secret_key = "supersecreto123"
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.login_message = 'Por favor, faça login para acessar esta página.'
 
 class User(UserMixin):
     def __init__(self, id, nome, email):
@@ -30,7 +31,7 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    return render_template('base.html', usuario=current_user)
+    return render_template('index.html', usuario=current_user)
 
 from flask import make_response
 
@@ -39,14 +40,6 @@ def lembrar_usuario():
     resposta = make_response(redirect(url_for('index')))
     resposta.set_cookie('nome_usuario', current_user.nome)
     return resposta
-
-@app.errorhandler(404)
-def pagina_nao_encontrada(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def erro_interno(e):
-    return render_template('500.html'), 500
 
 
 @app.route('/cadastrar_pessoa', methods=['GET', 'POST'])
@@ -119,7 +112,7 @@ def cadastrar_projeto():
     if request.method == 'POST':
         titulo = request.form['titulo'].strip()
         descricao = request.form['descricao'].strip()
-        usuario = current_user.nome  # nome do usuário logado
+        usuario = current_user.nome 
 
         if not titulo or not descricao:
             flash('Todos os campos devem ser preenchidos.')
@@ -141,18 +134,70 @@ def cadastrar_projeto():
     return render_template('cadastrar_projeto.html')
 
 @app.route('/projetos')
+@login_required
 def listar_projetos():
     conn = sqlite3.connect('jogo.db')
-    conn.row_factory = sqlite3.Row  # para poder acessar como dicionário
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # Seleciona tudo menos o id, ordenando do mais novo para o mais antigo
     cursor.execute("SELECT titulo, descricao, usuario FROM projetos ORDER BY id DESC")
     projetos = cursor.fetchall()
 
     conn.close()
     return render_template('projetos.html', projetos=projetos)
 
+@app.route('/meus-projetos')
+@login_required
+def meus_projetos():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'SELECT * FROM projetos WHERE usuario = ?',
+        (current_user.nome,)
+    )
+    projetos = cursor.fetchall()
+    conn.close()
+
+    return render_template('meus_projetos.html', projetos=projetos)
+
+@app.route('/editar_projeto/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_projeto(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        titulo = request.form.get('titulo', '').strip()
+        descricao = request.form.get('descricao', '').strip()
+
+        if titulo and descricao:
+            cursor.execute(
+                'UPDATE projetos SET titulo = ?, descricao = ? WHERE id = ? AND usuario = ?',
+                (titulo, descricao, id, current_user.nome)
+            )
+            conn.commit()
+            conn.close()
+            return redirect(url_for('meus_projetos'))
+        conn.close()
+        return redirect(url_for('editar_projeto', id=id))
+
+    cursor.execute('SELECT * FROM projetos WHERE id = ? AND usuario = ?', (id, current_user.nome))
+    projeto = cursor.fetchone()
+    conn.close()
+
+    return render_template('editar_projeto.html', projeto=projeto)
+
+
+@app.route('/excluir_projeto', methods=['POST'])
+@login_required
+def excluir_projeto(id):
+    pass
+
+
+@app.route('/sobre')
+def sobre():
+    return render_template('/sobre.html')
 
 @app.route('/logout')
 @login_required
@@ -160,6 +205,14 @@ def logout():
     logout_user()
     flash('Você saiu com sucesso! 💔')
     return redirect(url_for('login'))
+
+@app.errorhandler(404)
+def pagina_nao_encontrada(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def erro_interno(e):
+    return render_template('500.html'), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
